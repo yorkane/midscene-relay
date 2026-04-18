@@ -19,8 +19,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 (async () => {
   console.log(`Connecting to relay at ${RELAY_URL}...`);
 
+  const generateReport = process.env.GENERATE_REPORT !== 'false';
+
   const agent = await createRemoteAgent({
     relayUrl: RELAY_URL,
+    generateReport,
     aiActionContext:
       'If asked whether to save the password, click "Do Not Save" uniformly',
   });

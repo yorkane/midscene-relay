@@ -10,7 +10,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { createConnection } from 'node:net';
 import { Server, type Socket } from 'socket.io';
 import { WebSocket, WebSocketServer } from 'ws';
-import puppeteer, { type Browser, type Page } from 'puppeteer-core';
+import { chromium, type Browser, type Page } from 'playwright';
 
 const DEFAULT_CDP_URL = 'http://127.0.0.1:9222';
 const DEFAULT_RELAY_PORT = 3766;
@@ -48,21 +48,6 @@ interface RelayConfig {
   cdpProxyPort?: number;
 }
 
-/**
- * Get the browser WebSocket endpoint from Chrome's /json/version endpoint.
- */
-async function getBrowserWSEndpoint(cdpUrl: string): Promise<string> {
-  const versionUrl = `${cdpUrl}/json/version`;
-  console.log(`[Relay] Fetching browser info from ${versionUrl}`);
-  const res = await fetch(versionUrl);
-  const data = (await res.json()) as { webSocketDebuggerUrl: string };
-  if (!data.webSocketDebuggerUrl) {
-    throw new Error(
-      `Cannot get webSocketDebuggerUrl from ${versionUrl}. Is Chrome running with --remote-debugging-port?`,
-    );
-  }
-  return data.webSocketDebuggerUrl;
-}
 
 /**
  * The Relay Server.
@@ -83,9 +68,8 @@ export class RelayServer {
 
     // 1. Connect to Chrome via CDP
     console.log(`[Relay] Connecting to Chrome at ${cdpUrl}...`);
-    const wsEndpoint = await getBrowserWSEndpoint(cdpUrl);
-    this.browser = await puppeteer.connect({ browserWSEndpoint: wsEndpoint });
-    console.log(`[Relay] Connected to Chrome (${wsEndpoint})`);
+    this.browser = await chromium.connectOverCDP(cdpUrl);
+    console.log(`[Relay] Connected to Chrome (${cdpUrl})`);
 
     // 2. Start Socket.IO server
     const httpServer = createServer();
@@ -157,13 +141,13 @@ export class RelayServer {
       case 'connectNewTabWithUrl': {
         const url = args[0] as string;
         console.log(`[Relay] Creating new tab: ${url}`);
-        this.activePage = await this.browser.newPage();
+        this.activePage = await this.browser.contexts()[0].newPage();
         await this.activePage.goto(url, { waitUntil: 'domcontentloaded' });
         return;
       }
 
       case 'connectCurrentTab': {
-        const pages = await this.browser.pages();
+        const pages = this.browser.contexts().flatMap(c => c.pages());
         this.activePage = pages[pages.length - 1] || null;
         if (!this.activePage) throw new Error('No pages available');
         console.log(`[Relay] Connected to current tab: ${this.activePage.url()}`);
@@ -171,7 +155,7 @@ export class RelayServer {
       }
 
       case 'getBrowserTabList': {
-        const pages = await this.browser.pages();
+        const pages = this.browser.contexts().flatMap(c => c.pages());
         return pages.map((p, i) => ({
           id: String(i),
           title: '',
@@ -182,7 +166,7 @@ export class RelayServer {
 
       case 'setActiveTabId': {
         const tabIndex = Number(args[0]);
-        const pages = await this.browser.pages();
+        const pages = this.browser.contexts().flatMap(c => c.pages());
         if (tabIndex >= 0 && tabIndex < pages.length) {
           this.activePage = pages[tabIndex];
           await this.activePage.bringToFront();
@@ -196,7 +180,7 @@ export class RelayServer {
       }
 
       case 'size': {
-        const viewport = this.getPage().viewport();
+        const viewport = this.getPage().viewportSize();
         if (viewport) return { width: viewport.width, height: viewport.height };
         // Fallback: evaluate in page
         return await this.getPage().evaluate(() => ({
@@ -207,11 +191,10 @@ export class RelayServer {
 
       case 'screenshotBase64': {
         const buf = await this.getPage().screenshot({
-          encoding: 'base64',
           type: 'jpeg',
           quality: 90,
         });
-        return `data:image/jpeg;base64,${buf}`;
+        return `data:image/jpeg;base64,${buf.toString('base64')}`;
       }
 
       // ===== Navigation =====
@@ -259,7 +242,7 @@ export class RelayServer {
 
       case 'mouse.wheel': {
         const [deltaX, deltaY] = args;
-        await this.getPage().mouse.wheel({ deltaX, deltaY });
+        await this.getPage().mouse.wheel(deltaX, deltaY);
         return;
       }
 
@@ -410,7 +393,7 @@ export class RelayServer {
         break;
     }
 
-    await page.mouse.wheel({ deltaX, deltaY });
+    await page.mouse.wheel(deltaX, deltaY);
   }
 
   /**
@@ -537,7 +520,7 @@ export class RelayServer {
 
   async stop() {
     if (this.browser) {
-      this.browser.disconnect();
+      await this.browser.close();
       this.browser = null;
     }
     if (this.io) {
@@ -557,28 +540,48 @@ async function main() {
   const host = process.env.RELAY_HOST || DEFAULT_RELAY_HOST;
   const port = Number(process.env.RELAY_PORT) || DEFAULT_RELAY_PORT;
   const cdpProxyPort = Number(process.env.CDP_PROXY_PORT) || DEFAULT_CDP_PROXY_PORT;
+  const computerRelayPort = Number(process.env.COMPUTER_RELAY_PORT) || 3767;
+  
+  const enableSdkRelay = process.env.ENABLE_SDK_RELAY !== 'false';
+  const enableCdpProxy = process.env.ENABLE_CDP_PROXY !== 'false';
+  const enableComputerRelay = process.env.ENABLE_COMPUTER_RELAY === 'true';
 
-  console.log('=== Midscene Chrome Relay ===');
+  console.log('=== Midscene Relay ===');
   console.log(`Chrome CDP:     ${cdpUrl}`);
-  console.log(`SDK relay:      ${host}:${port}`);
-  console.log(`CDP proxy:      ${host}:${cdpProxyPort}`);
+  if (enableSdkRelay) console.log(`SDK relay:      ${host}:${port}`);
+  if (enableCdpProxy) console.log(`CDP proxy:      ${host}:${cdpProxyPort}`);
+  if (enableComputerRelay) console.log(`Computer relay: ${host}:${computerRelayPort}`);
   console.log('');
 
   const relay = new RelayServer({ cdpUrl, host, port, cdpProxyPort });
 
+  // Lazy import computer relay only when needed
+  let computerRelay: any = null;
+
   process.on('SIGINT', async () => {
     console.log('\n[Relay] Shutting down...');
     await relay.stop();
+    if (computerRelay) await computerRelay.stop();
     process.exit(0);
   });
 
   try {
-    await relay.start();
-    await relay.startCdpProxy();
+    if (enableSdkRelay) {
+      await relay.start();
+    }
+    if (enableCdpProxy) {
+      await relay.startCdpProxy();
+    }
+    if (enableComputerRelay) {
+      const { ComputerRelayServer } = await import('./computer-server.js');
+      computerRelay = new ComputerRelayServer({ host, port: computerRelayPort });
+      await computerRelay.start();
+    }
     console.log('');
     console.log('[Relay] Ready! Waiting for connections...');
-    console.log('[Relay] Midscene SDK:  ws://<this-ip>:' + port);
-    console.log('[Relay] Playwright:    chromium.connectOverCDP("http://<this-ip>:' + cdpProxyPort + '")');
+    if (enableSdkRelay) console.log('[Relay] Midscene SDK:  ws://<this-ip>:' + port);
+    if (enableCdpProxy) console.log('[Relay] Playwright:    chromium.connectOverCDP("http://<this-ip>:' + cdpProxyPort + '")');
+    if (enableComputerRelay) console.log('[Relay] Computer:      ws://<this-ip>:' + computerRelayPort);
   } catch (err) {
     console.error('[Relay] Failed to start:', err);
     process.exit(1);

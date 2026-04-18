@@ -38,7 +38,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   await sleep(2000);
 
   // Init Midscene agent
-  const agent = new PlaywrightAgent(page);
+  const generateReport = process.env.GENERATE_REPORT !== 'false';
+  const agent = new PlaywrightAgent(page, { generateReport });
 
   // Login with AI
   await agent.aiAct('type "standard_user" in user name input');
