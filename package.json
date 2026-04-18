@@ -1,0 +1,29 @@
+{
+  "name": "midscene-chrome-relay",
+  "version": "1.0.0",
+  "description": "Bridge Relay for Midscene - connects to local Chrome CDP and exposes remote control API",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "demo": "tsx src/demo.ts",
+    "demo:playwright": "tsx src/demo-playwright.ts"
+  },
+  "dependencies": {
+    "@midscene/core": "latest",
+    "@midscene/shared": "latest",
+    "@midscene/web": "latest",
+    "@playwright/test": "^1.59.1",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.59.1",
+    "puppeteer-core": "^24.6.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.20.1",
+    "typescript": "^5.8.3"
+  }
+}
