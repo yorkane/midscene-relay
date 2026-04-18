@@ -6,6 +6,7 @@
  * 3. Starts a CDP reverse proxy on 0.0.0.0:9223 (for Playwright / puppeteer.connect)
  * 4. Accepts remote SDK connections and forwards commands to Chrome
  */
+import 'dotenv/config';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createConnection } from 'node:net';
 import { Server, type Socket } from 'socket.io';
