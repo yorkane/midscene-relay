@@ -88,7 +88,16 @@ export class WebRelayServer {
     });
 
     this.io.on('connection', (socket) => {
-      console.log(`[Web Relay] New socket connection: ${socket.id} from ${socket.handshake.address}`);
+      const role = socket.handshake.auth?.role;
+      console.log(`[Web Relay] New socket connection: ${socket.id} from ${socket.handshake.address} (role: ${role || 'none'})`);
+
+      // Only accept connections with commander role (reject browser extension connections)
+      if (role !== 'commander') {
+        console.log(`[Web Relay] Rejecting ${socket.id}: missing auth role 'commander'`);
+        socket.disconnect();
+        return;
+      }
+
       this.handleConnection(socket);
     });
 

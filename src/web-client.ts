@@ -74,6 +74,7 @@ export class RemotePage implements AbstractInterface {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.socket = ClientIO(this.relayUrl, {
+        auth: { role: 'commander' },
         reconnection: true,
         reconnectionAttempts: 10,
         reconnectionDelay: 1000,
