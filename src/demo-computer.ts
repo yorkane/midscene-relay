@@ -8,12 +8,12 @@
  * 2. Set environment variables for AI model
  *
  * Usage:
- *   COMPUTER_RELAY_URL=ws://A_IP:3767 npm run demo:computer
+ *   DEMO_COMPUTER_RELAY_URL=ws://A_IP:3767 npm run demo:computer
  */
 import 'dotenv/config';
 import { createRemoteComputerAgent } from './computer-client';
 
-const COMPUTER_RELAY_URL = process.env.COMPUTER_RELAY_URL || 'ws://localhost:3767';
+const COMPUTER_RELAY_URL = process.env.DEMO_COMPUTER_RELAY_URL || 'ws://localhost:3767';
 const generateReport = process.env.GENERATE_REPORT !== 'false';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
