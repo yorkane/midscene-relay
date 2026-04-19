@@ -73,6 +73,12 @@ export class WebRelayServer {
     this.browser = await chromium.connectOverCDP(cdpUrl);
     console.log(`[Web Relay] Connected to Chrome (${cdpUrl})`);
 
+    // Monitor browser disconnect
+    this.browser.on('disconnected', () => {
+      console.error('[Web Relay] Chrome browser disconnected!');
+      this.activePage = null;
+    });
+
     // 2. Start Socket.IO server
     const httpServer = createServer();
     this.io = new Server(httpServer, {
@@ -82,6 +88,7 @@ export class WebRelayServer {
     });
 
     this.io.on('connection', (socket) => {
+      console.log(`[Web Relay] New socket connection: ${socket.id} from ${socket.handshake.address}`);
       this.handleConnection(socket);
     });
 
@@ -99,13 +106,13 @@ export class WebRelayServer {
 
   private handleConnection(socket: Socket) {
     if (this.commanderSocket?.connected) {
-      console.log('[Web Relay] Disconnecting previous commander to allow new connection');
+      console.log(`[Web Relay] Kicking previous commander ${this.commanderSocket.id} for new ${socket.id}`);
       const prev = this.commanderSocket;
       this.commanderSocket = null;
       prev.disconnect();
     }
 
-    console.log('[Web Relay] Commander connected');
+    console.log(`[Web Relay] Commander connected: ${socket.id}`);
     this.commanderSocket = socket;
 
     socket.emit(BridgeEvent.Connected, { version: '1.0.0-web-relay' });
@@ -118,6 +125,7 @@ export class WebRelayServer {
           response: result,
         } as BridgeCallResponse);
       } catch (err: any) {
+        console.error(`[Web Relay] Call error: ${call.method}`, err?.message);
         socket.emit(BridgeEvent.CallResponse, {
           id: call.id,
           error: err?.message || String(err),
@@ -128,8 +136,10 @@ export class WebRelayServer {
     socket.on('disconnect', (reason) => {
       // Only clear if this socket is still the active commander
       if (this.commanderSocket === socket) {
-        console.log(`[Web Relay] Commander disconnected: ${reason}`);
+        console.log(`[Web Relay] Commander ${socket.id} disconnected: ${reason}`);
         this.commanderSocket = null;
+      } else {
+        console.log(`[Web Relay] Old socket ${socket.id} disconnected: ${reason} (already replaced)`);
       }
     });
   }
