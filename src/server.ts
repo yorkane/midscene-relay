@@ -12,7 +12,7 @@ import { WebRelayServer } from './web-server';
 async function main() {
   // Web Relay config
   const cdpUrl = process.env.CDP_URL || 'http://127.0.0.1:9222';
-  const webRelayUrl = process.env.RELAY_URL || 'ws://0.0.0.0:3766';
+  const webRelayUrl = process.env.RELAY_URL || 'ws://0.0.0.0:3768';
   const cdpProxyUrl = process.env.CDP_PROXY_URL || 'http://0.0.0.0:9223';
   const enableWebRelay = process.env.ENABLE_WEB_RELAY === 'true';
   const enableCdpProxy = process.env.ENABLE_CDP_PROXY === 'true';

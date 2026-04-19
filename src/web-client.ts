@@ -3,7 +3,7 @@
  *
  * Usage:
  *   import { createRemoteAgent } from './client';
- *   const agent = await createRemoteAgent({ relayUrl: 'ws://A_IP:3766' });
+ *   const agent = await createRemoteAgent({ relayUrl: 'ws://A_IP:3768' });
  *   await agent.connectCurrentTab();
  *   await agent.aiAct('click login button');
  */
@@ -444,7 +444,7 @@ export class RemoteAgent extends Agent<RemotePage> {
  * @example
  * ```typescript
  * const agent = await createRemoteAgent({
- *   relayUrl: 'ws://192.168.1.13:3766',
+ *   relayUrl: 'ws://192.168.1.13:3768',
  * });
  * await agent.connectCurrentTab();
  * await agent.aiAct('click the login button');

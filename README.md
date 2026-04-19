@@ -9,11 +9,11 @@ A电脑 (浏览器机器):
   Chrome --remote-debugging-port=9222
     ↑ CDP (localhost:9222)
   midscene-chrome-relay (本服务)
-    ├─ Socket.IO Server (0.0.0.0:3766)  ← Midscene SDK 连接
+    ├─ Socket.IO Server (0.0.0.0:3768)  ← Midscene SDK 连接
     └─ CDP Proxy (0.0.0.0:9223)         ← Playwright / Puppeteer 连接
 
 B电脑 (脚本机器):
-  方式1: Midscene SDK → ws://A_IP:3766
+  方式1: Midscene SDK → ws://A_IP:3768
   方式2: Playwright  → chromium.connectOverCDP('http://A_IP:9223')
 ```
 
@@ -44,15 +44,15 @@ npm start
 ```
 === Midscene Chrome Relay ===
 Chrome CDP:     http://127.0.0.1:9222
-SDK relay:      0.0.0.0:3766
+SDK relay:      0.0.0.0:3768
 CDP proxy:      0.0.0.0:9223
 
 [Relay] Connected to Chrome
-[Relay] Server listening on 0.0.0.0:3766
+[Relay] Server listening on 0.0.0.0:3768
 [CDP Proxy] Listening on 0.0.0.0:9223
 
 [Relay] Ready! Waiting for connections...
-[Relay] Midscene SDK:  ws://<this-ip>:3766
+[Relay] Midscene SDK:  ws://<this-ip>:3768
 [Relay] Playwright:    chromium.connectOverCDP("http://<this-ip>:9223")
 ```
 
@@ -61,7 +61,7 @@ CDP proxy:      0.0.0.0:9223
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `CDP_URL` | `http://127.0.0.1:9222` | Chrome CDP 地址 |
-| `RELAY_URL` | `0.0.0.0:3766` | 监听地址 |
+| `RELAY_URL` | `0.0.0.0:3768` | 监听地址 |
 | `CDP_PROXY_URL` | `0.0.0.0:9223` | Playwright/Puppeteer CDP 代理地址 |
 
 ---
@@ -74,7 +74,7 @@ CDP proxy:      0.0.0.0:9223
 import { createRemoteAgent } from './client';
 
 const agent = await createRemoteAgent({
-  relayUrl: 'ws://A电脑IP:3766',
+  relayUrl: 'ws://A电脑IP:3768',
 });
 
 await agent.connectCurrentTab();
@@ -85,7 +85,7 @@ await agent.destroy();
 
 运行：
 ```bash
-RELAY_URL=ws://A电脑IP:3766 npm run demo
+RELAY_URL=ws://A电脑IP:3768 npm run demo
 ```
 
 ---
@@ -130,4 +130,4 @@ export OPENAI_BASE_URL=https://your-api-base/v1/
 
 - Relay 默认监听 `0.0.0.0`，确保在可信网络中使用
 - Chrome CDP 只暴露在 localhost，外部通过 Relay 代理访问
-- 建议用防火墙限制 3766 和 9223 端口的访问源
+- 建议用防火墙限制 3768 和 9223 端口的访问源

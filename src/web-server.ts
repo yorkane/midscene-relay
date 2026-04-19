@@ -12,7 +12,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { chromium, type Browser, type Page } from 'playwright';
 
 const DEFAULT_CDP_URL = 'http://127.0.0.1:9222';
-const DEFAULT_RELAY_PORT = 3766;
+const DEFAULT_RELAY_PORT = 3768;
 const DEFAULT_CDP_PROXY_PORT = 9223;
 const DEFAULT_RELAY_HOST = '0.0.0.0';
 
@@ -39,7 +39,7 @@ interface BridgeCallResponse {
 export interface WebRelayConfig {
   /** Chrome CDP URL, default http://127.0.0.1:9222 */
   cdpUrl?: string;
-  /** Relay URL for SDK, default ws://0.0.0.0:3766 */
+  /** Relay URL for SDK, default ws://0.0.0.0:3768 */
   url?: string;
   /** CDP reverse proxy URL for Playwright, default http://0.0.0.0:9223 */
   cdpProxyUrl?: string;
@@ -63,10 +63,10 @@ export class WebRelayServer {
 
   async start(): Promise<void> {
     const cdpUrl = this.config.cdpUrl || DEFAULT_CDP_URL;
-    const relayUrlStr = this.config.url || 'ws://0.0.0.0:3766';
+    const relayUrlStr = this.config.url || 'ws://0.0.0.0:3768';
     const relayUrl = new URL(relayUrlStr.includes('://') ? relayUrlStr : `ws://${relayUrlStr}`);
     const host = relayUrl.hostname;
-    const port = Number(relayUrl.port) || 3766;
+    const port = Number(relayUrl.port) || 3768;
 
     // 1. Connect to Chrome via CDP
     console.log(`[Web Relay] Connecting to Chrome at ${cdpUrl}...`);
