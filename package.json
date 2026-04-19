@@ -1,31 +1,24 @@
 {
-  "name": "midscene-chrome-relay",
+  "name": "midscene-relay",
   "version": "1.0.0",
-  "description": "Bridge Relay for Midscene - connects to local Chrome CDP and exposes remote control API",
+  "description": "Midscene Relay - exposes local desktop control (mouse/keyboard/screenshot) for remote AI automation",
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
-    "demo": "tsx src/demo.ts",
-    "demo:playwright": "tsx src/demo-playwright.ts",
     "demo:computer": "tsx src/demo-computer.ts"
   },
   "dependencies": {
     "@computer-use/libnut": "^4.2.0",
     "@midscene/core": "latest",
     "@midscene/shared": "latest",
-    "@midscene/web": "latest",
-    "@playwright/test": "^1.59.1",
     "clipboardy": "^5.3.1",
     "dotenv": "^16.4.5",
-    "playwright": "^1.59.1",
     "screenshot-desktop": "^1.15.3",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
-    "ws": "^8.20.0"
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "@types/ws": "^8.18.1",
     "tsx": "^4.20.1",
     "typescript": "^5.8.3"
   }
