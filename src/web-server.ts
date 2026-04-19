@@ -63,7 +63,8 @@ export class WebRelayServer {
 
   async start(): Promise<void> {
     const cdpUrl = this.config.cdpUrl || DEFAULT_CDP_URL;
-    const relayUrl = new URL(this.config.url || 'ws://0.0.0.0:3766');
+    const relayUrlStr = this.config.url || 'ws://0.0.0.0:3766';
+    const relayUrl = new URL(relayUrlStr.includes('://') ? relayUrlStr : `ws://${relayUrlStr}`);
     const host = relayUrl.hostname;
     const port = Number(relayUrl.port) || 3766;
 
@@ -401,7 +402,8 @@ export class WebRelayServer {
    */
   async startCdpProxy(): Promise<void> {
     const cdpUrl = this.config.cdpUrl || DEFAULT_CDP_URL;
-    const proxyUrl = new URL(this.config.cdpProxyUrl || 'http://0.0.0.0:9223');
+    const proxyUrlStr = this.config.cdpProxyUrl || 'http://0.0.0.0:9223';
+    const proxyUrl = new URL(proxyUrlStr.includes('://') ? proxyUrlStr : `http://${proxyUrlStr}`);
     const host = proxyUrl.hostname;
     const proxyPort = Number(proxyUrl.port) || 9223;
     const cdpOrigin = new URL(cdpUrl);

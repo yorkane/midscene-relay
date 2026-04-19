@@ -143,7 +143,8 @@ export class ComputerRelayServer {
   constructor(private config: ComputerRelayConfig = {}) {}
 
   async start(): Promise<void> {
-    const relayUrl = new URL(this.config.url || 'ws://0.0.0.0:3767');
+    const relayUrlStr = this.config.url || 'ws://0.0.0.0:3767';
+    const relayUrl = new URL(relayUrlStr.includes('://') ? relayUrlStr : `ws://${relayUrlStr}`);
     const host = relayUrl.hostname;
     const port = Number(relayUrl.port) || 3767;
 
