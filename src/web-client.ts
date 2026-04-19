@@ -59,6 +59,7 @@ export class RemotePage implements AbstractInterface {
   interfaceType = 'remote-chrome-relay';
   private socket: Socket | null = null;
   private callId = 0;
+  private bridgeReady = false;
   private pendingCalls = new Map<
     string,
     {
@@ -73,7 +74,10 @@ export class RemotePage implements AbstractInterface {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.socket = ClientIO(this.relayUrl, {
-        reconnection: false,
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
         transports: ['websocket'],
       });
 
@@ -82,20 +86,35 @@ export class RemotePage implements AbstractInterface {
         reject(new Error(`Failed to connect to relay at ${this.relayUrl}`));
       }, 15000);
 
+      let firstConnect = true;
+
       this.socket.on(BridgeEvent.Connected, () => {
-        clearTimeout(timeout);
-        console.log(`[RemotePage] Connected to relay at ${this.relayUrl}`);
-        resolve();
+        this.bridgeReady = true;
+        if (firstConnect) {
+          firstConnect = false;
+          clearTimeout(timeout);
+          console.log(`[RemotePage] Connected to relay at ${this.relayUrl}`);
+          resolve();
+        } else {
+          console.log(`[RemotePage] Reconnected to relay at ${this.relayUrl}`);
+        }
       });
 
       this.socket.on(BridgeEvent.Refused, (reason: string) => {
-        clearTimeout(timeout);
-        reject(new Error(`Connection refused: ${reason}`));
+        this.bridgeReady = false;
+        if (firstConnect) {
+          clearTimeout(timeout);
+          reject(new Error(`Connection refused: ${reason}`));
+        } else {
+          console.error(`[RemotePage] Reconnection refused: ${reason}`);
+        }
       });
 
       this.socket.on('connect_error', (err: any) => {
-        clearTimeout(timeout);
-        reject(new Error(`Connect error: ${err?.message || err}`));
+        if (firstConnect) {
+          clearTimeout(timeout);
+          reject(new Error(`Connect error: ${err?.message || err}`));
+        }
       });
 
       this.socket.on(BridgeEvent.CallResponse, (resp: BridgeCallResponse) => {
@@ -115,19 +134,52 @@ export class RemotePage implements AbstractInterface {
         }
       });
 
-      this.socket.on('disconnect', () => {
+      this.socket.on('disconnect', (reason) => {
+        console.log(`[RemotePage] Disconnected from relay: ${reason}`);
+        this.bridgeReady = false;
         // Reject all pending calls
         for (const [id, pending] of this.pendingCalls) {
           clearTimeout(pending.timeout);
-          pending.reject(new Error('Disconnected from relay'));
+          pending.reject(new Error(`Disconnected from relay: ${reason}`));
         }
         this.pendingCalls.clear();
+      });
+
+      this.socket.on('reconnect_attempt', (attempt: number) => {
+        console.log(`[RemotePage] Reconnection attempt ${attempt}...`);
+      });
+
+      this.socket.on('reconnect_failed', () => {
+        console.error(`[RemotePage] All reconnection attempts exhausted`);
       });
     });
   }
 
+  /**
+   * Wait for the bridge to become ready (after reconnect).
+   */
+  private waitForBridgeReady(timeoutMs = 10000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.bridgeReady) { resolve(); return; }
+      const timer = setTimeout(() => {
+        this.socket?.off(BridgeEvent.Connected, handler);
+        reject(new Error('Reconnection timeout: bridge not ready'));
+      }, timeoutMs);
+      const handler = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      this.socket?.once(BridgeEvent.Connected, handler);
+    });
+  }
+
   private async call(method: string, ...args: any[]): Promise<any> {
-    if (!this.socket?.connected) {
+    // If temporarily disconnected, wait for auto-reconnection
+    if (!this.bridgeReady && this.socket) {
+      console.log(`[RemotePage] Waiting for reconnection before calling ${method}...`);
+      await this.waitForBridgeReady(10000);
+    }
+    if (!this.bridgeReady || !this.socket?.connected) {
       throw new Error('Not connected to relay');
     }
     const id = String(this.callId++);

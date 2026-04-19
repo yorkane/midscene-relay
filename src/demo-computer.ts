@@ -29,21 +29,21 @@ async function openBrowserAndNavigate(
 ): Promise<void> {
   if (IS_MAC) {
     await agent.aiAct('press Cmd+Space');
-    await sleep(500);
+    await sleep(100);
     await agent.aiAct('type "Safari" and press Enter');
-    await sleep(2000);
+    await sleep(500);
     await agent.aiAct('press Cmd+L to focus address bar');
   } else {
     await agent.aiAct('press Super key to open start menu');
-    await sleep(500);
+    await sleep(100);
     await agent.aiAct('type "Chrome" and press Enter');
-    await sleep(2000);
+    await sleep(500);
     await agent.aiAct('press Ctrl+L to focus address bar');
   }
-  await sleep(300);
+  await sleep(100);
   await agent.aiAct(`type "${url}"`);
   await agent.aiAct('press Enter');
-  await sleep(3000);
+  await sleep(500);
 }
 
 (async () => {
@@ -67,7 +67,7 @@ async function openBrowserAndNavigate(
   await agent.aiAct('type "standard_user" in user name input');
   await agent.aiAct('type "secret_sauce" in password input');
   await agent.aiAct('click Login Button');
-  await sleep(2000);
+  await sleep(1000);
 
   // Check login success
   await agent.aiAssert('the page title is "Swag Labs"');
