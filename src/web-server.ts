@@ -100,7 +100,9 @@ export class WebRelayServer {
   private handleConnection(socket: Socket) {
     if (this.commanderSocket?.connected) {
       console.log('[Web Relay] Disconnecting previous commander to allow new connection');
-      this.commanderSocket.disconnect();
+      const prev = this.commanderSocket;
+      this.commanderSocket = null;
+      prev.disconnect();
     }
 
     console.log('[Web Relay] Commander connected');
@@ -124,8 +126,11 @@ export class WebRelayServer {
     });
 
     socket.on('disconnect', (reason) => {
-      console.log(`[Web Relay] Commander disconnected: ${reason}`);
-      this.commanderSocket = null;
+      // Only clear if this socket is still the active commander
+      if (this.commanderSocket === socket) {
+        console.log(`[Web Relay] Commander disconnected: ${reason}`);
+        this.commanderSocket = null;
+      }
     });
   }
 

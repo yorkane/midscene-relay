@@ -184,7 +184,9 @@ export class ComputerRelayServer {
   private handleConnection(socket: Socket, nut: LibNut) {
     if (this.commanderSocket?.connected) {
       console.log('[Computer Relay] Disconnecting previous commander to allow new connection');
-      this.commanderSocket.disconnect();
+      const prev = this.commanderSocket;
+      this.commanderSocket = null;
+      prev.disconnect();
     }
 
     console.log('[Computer Relay] Commander connected');
@@ -208,8 +210,11 @@ export class ComputerRelayServer {
     });
 
     socket.on('disconnect', (reason) => {
-      console.log(`[Computer Relay] Commander disconnected: ${reason}`);
-      this.commanderSocket = null;
+      // Only clear if this socket is still the active commander
+      if (this.commanderSocket === socket) {
+        console.log(`[Computer Relay] Commander disconnected: ${reason}`);
+        this.commanderSocket = null;
+      }
     });
   }
 
