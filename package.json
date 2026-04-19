@@ -1,7 +1,7 @@
 {
   "name": "midscene-relay",
   "version": "1.0.0",
-  "description": "Midscene Relay - exposes local desktop control (mouse/keyboard/screenshot) for remote AI automation",
+  "description": "Midscene Relay - exposes local computer control (mouse/keyboard/screen) for remote automation",
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
@@ -10,7 +10,6 @@
   "dependencies": {
     "@computer-use/libnut": "^4.2.0",
     "@midscene/core": "latest",
-    "@midscene/shared": "latest",
     "clipboardy": "^5.3.1",
     "dotenv": "^16.4.5",
     "screenshot-desktop": "^1.15.3",
