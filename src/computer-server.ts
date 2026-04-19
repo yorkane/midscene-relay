@@ -183,10 +183,8 @@ export class ComputerRelayServer {
 
   private handleConnection(socket: Socket, nut: LibNut) {
     if (this.commanderSocket?.connected) {
-      console.log('[Computer Relay] Refusing: already have a commander');
-      socket.emit(BridgeEvent.Refused, 'Another client is already connected');
-      socket.disconnect();
-      return;
+      console.log('[Computer Relay] Disconnecting previous commander to allow new connection');
+      this.commanderSocket.disconnect();
     }
 
     console.log('[Computer Relay] Commander connected');

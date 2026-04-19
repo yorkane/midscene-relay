@@ -99,10 +99,8 @@ export class WebRelayServer {
 
   private handleConnection(socket: Socket) {
     if (this.commanderSocket?.connected) {
-      console.log('[Web Relay] Refusing new connection: already have a commander');
-      socket.emit(BridgeEvent.Refused, 'Another client is already connected');
-      socket.disconnect();
-      return;
+      console.log('[Web Relay] Disconnecting previous commander to allow new connection');
+      this.commanderSocket.disconnect();
     }
 
     console.log('[Web Relay] Commander connected');
