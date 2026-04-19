@@ -44,8 +44,7 @@ interface LibNut {
 }
 
 export interface ComputerRelayConfig {
-  host?: string;
-  port?: number;
+  url?: string;
 }
 
 /**
@@ -144,8 +143,9 @@ export class ComputerRelayServer {
   constructor(private config: ComputerRelayConfig = {}) {}
 
   async start(): Promise<void> {
-    const host = this.config.host || DEFAULT_RELAY_HOST;
-    const port = this.config.port || DEFAULT_COMPUTER_RELAY_PORT;
+    const relayUrl = new URL(this.config.url || 'ws://0.0.0.0:3767');
+    const host = relayUrl.hostname;
+    const port = Number(relayUrl.port) || 3767;
 
     // Initialize libnut
     console.log('[Computer Relay] Initializing libnut...');

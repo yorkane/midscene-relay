@@ -61,9 +61,8 @@ CDP proxy:      0.0.0.0:9223
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `CDP_URL` | `http://127.0.0.1:9222` | Chrome CDP 地址 |
-| `RELAY_HOST` | `0.0.0.0` | 监听地址 |
-| `RELAY_PORT` | `3766` | Midscene SDK 端口 |
-| `CDP_PROXY_PORT` | `9223` | Playwright/Puppeteer CDP 代理端口 |
+| `RELAY_URL` | `0.0.0.0:3766` | 监听地址 |
+| `CDP_PROXY_URL` | `0.0.0.0:9223` | Playwright/Puppeteer CDP 代理地址 |
 
 ---
 

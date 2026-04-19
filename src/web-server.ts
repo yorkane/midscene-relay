@@ -39,12 +39,10 @@ interface BridgeCallResponse {
 export interface WebRelayConfig {
   /** Chrome CDP URL, default http://127.0.0.1:9222 */
   cdpUrl?: string;
-  /** Relay listen host, default 0.0.0.0 */
-  host?: string;
-  /** Socket.IO relay port for Midscene SDK, default 3766 */
-  port?: number;
-  /** CDP reverse proxy port for Playwright, default 9223 */
-  cdpProxyPort?: number;
+  /** Relay URL for SDK, default ws://0.0.0.0:3766 */
+  url?: string;
+  /** CDP reverse proxy URL for Playwright, default http://0.0.0.0:9223 */
+  cdpProxyUrl?: string;
 }
 
 /**
@@ -65,8 +63,9 @@ export class WebRelayServer {
 
   async start(): Promise<void> {
     const cdpUrl = this.config.cdpUrl || DEFAULT_CDP_URL;
-    const host = this.config.host || DEFAULT_RELAY_HOST;
-    const port = this.config.port || DEFAULT_RELAY_PORT;
+    const relayUrl = new URL(this.config.url || 'ws://0.0.0.0:3766');
+    const host = relayUrl.hostname;
+    const port = Number(relayUrl.port) || 3766;
 
     // 1. Connect to Chrome via CDP
     console.log(`[Web Relay] Connecting to Chrome at ${cdpUrl}...`);
@@ -402,8 +401,9 @@ export class WebRelayServer {
    */
   async startCdpProxy(): Promise<void> {
     const cdpUrl = this.config.cdpUrl || DEFAULT_CDP_URL;
-    const host = this.config.host || DEFAULT_RELAY_HOST;
-    const proxyPort = this.config.cdpProxyPort || DEFAULT_CDP_PROXY_PORT;
+    const proxyUrl = new URL(this.config.cdpProxyUrl || 'http://0.0.0.0:9223');
+    const host = proxyUrl.hostname;
+    const proxyPort = Number(proxyUrl.port) || 9223;
     const cdpOrigin = new URL(cdpUrl);
 
     const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {

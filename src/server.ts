@@ -9,26 +9,22 @@ import 'dotenv/config';
 import { ComputerRelayServer } from './computer-server';
 import { WebRelayServer } from './web-server';
 
-const DEFAULT_RELAY_HOST = '0.0.0.0';
-
 async function main() {
-  const host = process.env.RELAY_HOST || DEFAULT_RELAY_HOST;
-
   // Web Relay config
   const cdpUrl = process.env.CDP_URL || 'http://127.0.0.1:9222';
-  const webRelayPort = Number(process.env.RELAY_PORT) || 3766;
-  const cdpProxyPort = Number(process.env.CDP_PROXY_PORT) || 9223;
+  const webRelayUrl = process.env.RELAY_URL || 'ws://0.0.0.0:3766';
+  const cdpProxyUrl = process.env.CDP_PROXY_URL || 'http://0.0.0.0:9223';
   const enableWebRelay = process.env.ENABLE_WEB_RELAY === 'true';
   const enableCdpProxy = process.env.ENABLE_CDP_PROXY === 'true';
 
   // Computer Relay config
-  const computerRelayPort = Number(process.env.COMPUTER_RELAY_PORT) || 3767;
+  const computerRelayUrl = process.env.COMPUTER_RELAY_URL || 'ws://0.0.0.0:3767';
   const enableComputerRelay = process.env.ENABLE_COMPUTER_RELAY === 'true';
 
   console.log('=== Midscene Relay ===');
-  if (enableWebRelay) console.log(`Web SDK relay:  ${host}:${webRelayPort}  (CDP: ${cdpUrl})`);
-  if (enableCdpProxy) console.log(`CDP proxy:      ${host}:${cdpProxyPort}`);
-  if (enableComputerRelay) console.log(`Computer relay: ${host}:${computerRelayPort}`);
+  if (enableWebRelay) console.log(`Web SDK relay:  ${webRelayUrl}  (CDP: ${cdpUrl})`);
+  if (enableCdpProxy) console.log(`CDP proxy:      ${cdpProxyUrl}`);
+  if (enableComputerRelay) console.log(`Computer relay: ${computerRelayUrl}`);
   if (!enableWebRelay && !enableCdpProxy && !enableComputerRelay) {
     console.log('WARNING: No relay channels enabled! Set ENABLE_WEB_RELAY, ENABLE_CDP_PROXY, or ENABLE_COMPUTER_RELAY to true.');
   }
@@ -47,7 +43,7 @@ async function main() {
   try {
     // Start Web Relay (SDK bridge + optional CDP proxy)
     if (enableWebRelay || enableCdpProxy) {
-      webRelay = new WebRelayServer({ cdpUrl, host, port: webRelayPort, cdpProxyPort });
+      webRelay = new WebRelayServer({ cdpUrl, url: webRelayUrl, cdpProxyUrl });
       if (enableWebRelay) {
         await webRelay.start();
       }
@@ -58,15 +54,15 @@ async function main() {
 
     // Start Computer Relay
     if (enableComputerRelay) {
-      computerRelay = new ComputerRelayServer({ host, port: computerRelayPort });
+      computerRelay = new ComputerRelayServer({ url: computerRelayUrl });
       await computerRelay.start();
     }
 
     console.log('');
     console.log('[Relay] Ready! Waiting for connections...');
-    if (enableWebRelay) console.log('[Relay] Midscene SDK:  ws://<this-ip>:' + webRelayPort);
-    if (enableCdpProxy) console.log('[Relay] Playwright:    chromium.connectOverCDP("http://<this-ip>:' + cdpProxyPort + '")');
-    if (enableComputerRelay) console.log('[Relay] Computer:      ws://<this-ip>:' + computerRelayPort);
+    if (enableWebRelay) console.log('[Relay] Midscene SDK:  ' + webRelayUrl);
+    if (enableCdpProxy) console.log('[Relay] Playwright:    chromium.connectOverCDP("' + cdpProxyUrl + '")');
+    if (enableComputerRelay) console.log('[Relay] Computer:      ' + computerRelayUrl);
   } catch (err) {
     console.error('[Relay] Failed to start:', err);
     process.exit(1);
