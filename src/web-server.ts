@@ -52,7 +52,7 @@ export interface WebRelayConfig {
  *
  * Connects to a local Chrome instance via CDP and exposes:
  * - Socket.IO bridge for Midscene SDK (tab management, screenshots, mouse/keyboard, element tree)
- * - CDP reverse proxy for Playwright/Puppeteer connectOverCDP
+ * - CDP reverse proxy for Playwright connectOverCDP
  */
 export class WebRelayServer {
   private io: Server | null = null;
