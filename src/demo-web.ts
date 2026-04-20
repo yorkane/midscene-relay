@@ -30,13 +30,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   // Connect to a new tab
   await agent.connectNewTabWithUrl('https://www.saucedemo.com/');
-  await sleep(2000);
+  await sleep(1000);
 
   // Login
   await agent.aiAct('type "standard_user" in user name input');
   await agent.aiAct('type "secret_sauce" in password input');
   await agent.aiAct('click Login Button');
-  await sleep(2000);
+  await sleep(1000);
 
   // Check the login success
   await agent.aiAssert('the page title is "Swag Labs"');

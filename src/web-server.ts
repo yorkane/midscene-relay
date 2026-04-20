@@ -164,7 +164,12 @@ export class WebRelayServer {
       case 'connectNewTabWithUrl': {
         const url = args[0] as string;
         console.log(`[Web Relay] Creating new tab: ${url}`);
-        this.activePage = await this.browser.contexts()[0].newPage();
+        let context = this.browser.contexts()[0];
+        if (!context) {
+          console.log(`[Web Relay] No default context found, creating a new context.`);
+          context = await this.browser.newContext();
+        }
+        this.activePage = await context.newPage();
         await this.activePage.goto(url, { waitUntil: 'domcontentloaded' });
         return;
       }
