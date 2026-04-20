@@ -154,6 +154,17 @@ export class WebRelayServer {
   }
 
   /**
+   * Get the first browser context, or create one if none exist.
+   */
+  private async getOrCreateContext() {
+    if (!this.browser) throw new Error('Not connected to Chrome');
+    const contexts = this.browser.contexts();
+    if (contexts.length > 0) return contexts[0];
+    console.log('[Web Relay] No browser contexts found, creating a new one...');
+    return await this.browser.newContext();
+  }
+
+  /**
    * Execute a bridge call method against Chrome via Playwright.
    */
   private async executeCall(method: string, args: any[]): Promise<any> {
@@ -164,11 +175,7 @@ export class WebRelayServer {
       case 'connectNewTabWithUrl': {
         const url = args[0] as string;
         console.log(`[Web Relay] Creating new tab: ${url}`);
-        let context = this.browser.contexts()[0];
-        if (!context) {
-          console.log(`[Web Relay] No default context found, creating a new context.`);
-          context = await this.browser.newContext();
-        }
+        const context = await this.getOrCreateContext();
         this.activePage = await context.newPage();
         await this.activePage.goto(url, { waitUntil: 'domcontentloaded' });
         return;
